@@ -1,0 +1,76 @@
+name: CI/CD Pipeline - AI CS Top Up Game
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+
+  test:
+    name: Automated Testing
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install --upgrade pip
+      - run: pip install fastapi uvicorn httpx pytest pytest-asyncio pytest-cov flake8
+      - name: Lint with flake8
+        run: flake8 app/ --max-line-length=120
+      - name: Run tests with coverage
+        run: python -m pytest -v --cov=app --cov-report=term-missing
+
+  security:
+    name: Security Gate
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install bandit
+      - run: bandit -r app/ -ll
+
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: security
+    steps:
+      - uses: actions/checkout@v4
+      - name: Simulate Deploy Staging
+        run: |
+          echo "Deploying to STAGING environment..."
+          echo "Commit: ${{ github.sha }}"
+          echo "Deploy staging SUCCESS"
+
+  deploy-uat:
+    name: Deploy to UAT
+    runs-on: ubuntu-latest
+    needs: deploy-staging
+    environment:
+      name: UAT
+    steps:
+      - uses: actions/checkout@v4
+      - name: Simulate Deploy UAT
+        run: |
+          echo "Deploying to UAT environment..."
+          echo "Commit: ${{ github.sha }}"
+          echo "Deploy UAT SUCCESS"
+
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: deploy-uat
+    environment:
+      name: Production
+    steps:
+      - uses: actions/checkout@v4
+      - name: Simulate Deploy Production
+        run: |
+          echo "Deploying to PRODUCTION environment..."
+          echo "Commit: ${{ github.sha }}"
+          echo "Deploy production SUCCESS"
